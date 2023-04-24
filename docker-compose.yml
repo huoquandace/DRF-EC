@@ -1,0 +1,44 @@
+version: "3.7"
+services:
+    mysqldb:
+        image: mysql:8
+        ports:
+            - "33068:3306"
+        environment:
+            - MYSQL_ROOT_PASSWORD=cleancode
+            - MYSQL_DATABASE=cleancode
+            - MYSQL_PASSWORD=cleancode
+        restart: always
+        command: [
+            '--character-set-server=utf8mb4',
+            '--collation-server=utf8mb4_unicode_ci',
+            '--default-time-zone=+7:00'
+        ]
+        networks:
+            - cleancode_network
+
+    web:
+        container_name: cleancode_app
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "8056:8056"
+        env_file: .env
+
+        environment:
+            - DJANGO_SETTINGS_MODULE=settings.local
+
+        command: bash -c "python manage.py makemigrations && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8056"
+        volumes:
+          - ./app/:/usr/src/app
+        depends_on:
+            - mysqldb
+        restart: always
+        tty: true
+        stdin_open: true
+        networks:
+            - cleancode_network
+networks:
+  cleancode_network:
+    driver: bridge
